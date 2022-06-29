@@ -1,0 +1,78 @@
+FROM ubuntu:focal
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    libmicrohttpd-dev \
+    libjansson-dev \
+    libssl-dev \
+    libsofia-sip-ua-dev \
+    libglib2.0-dev \
+    libopus-dev \
+    libogg-dev \
+    libcurl4-openssl-dev \
+    liblua5.3-dev \
+    libconfig-dev \
+    pkg-config \
+    gengetopt \
+    libtool \
+    automake \
+    make \
+    git \
+    wget \
+    meson \
+    ninja-build \
+    cmake \
+    ffmpeg \
+    v4l-utils \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN cd ~/ && \
+    git clone https://gitlab.freedesktop.org/libnice/libnice && \
+    cd libnice && \
+    meson --prefix=/usr --libdir=lib build && \
+    ninja -C build && \
+    ninja -C build install && \
+    cd ~/ && \
+    rm -rf libnice
+
+RUN cd ~/ && \
+    wget https://github.com/cisco/libsrtp/archive/refs/tags/v2.4.2.tar.gz && \
+    tar zxvf v2.4.2.tar.gz && \
+    cd libsrtp-2.4.2 && \
+    ./configure --prefix=/usr --enable-openssl && \
+    make shared_library && \
+    make install && \
+    cd ~/ && \
+    rm -f v2.4.2.tar.gz && \
+    rm -rf libsrtp-2.4.2
+
+RUN cd ~/ && \
+    git clone https://libwebsockets.org/repo/libwebsockets && \
+    cd libwebsockets && \
+    git checkout v3.2-stable && \
+    mkdir build && \
+    cd build && \
+    cmake -DLWS_MAX_SMP=1 -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_C_FLAGS="-fpic" .. && \
+    make && \
+    make install && \
+    cd ~/ && \
+    rm -rf libwebsockets
+
+RUN cd ~/ && \
+    git clone https://github.com/meetecho/janus-gateway.git && \
+    cd janus-gateway && \
+    ./autogen.sh && \
+    ./configure --prefix=/opt/janus --disable-aes-gcm && \
+    make && \
+    make install && \
+    make configs && \
+    cd ~/ && \
+    rm -rf janus-gateway
+
+ADD ./janus.plugin.streaming.jcfg /opt/janus/etc/janus/janus.plugin.streaming.jcfg
+ADD entrypoint.sh /sbin/entrypoint.sh
+RUN chmod +x /sbin/entrypoint.sh
+
+CMD /sbin/entrypoint.sh

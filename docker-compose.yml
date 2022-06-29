@@ -1,0 +1,10 @@
+services:
+  janus:
+    build:
+      context: ./janus
+      dockerfile: ./Dockerfile.janus
+    ports:
+      - "8088:8088"
+    devices:
+      - "/dev/video0:/dev/video0"
+      - "/dev/vchiq:/dev/vchiq"

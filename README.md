@@ -60,8 +60,9 @@ sudo cp ./janus/janus.plugin.streaming.jcfg /opt/janus/etc/janus/janus.plugin.st
 
 ```
 vi team2-frontend/src/App.vue
-# L21のconst JANUS_URLをRaspberry PiのIP:8088/janusに書き換え
-const JANUS_URL = 'http://192.168.1.19:8088/janus'
+# L21のconst JANUS_URL,axios postをRaspberry PiのIP:8088/janusに書き換え
+const JANUS_URL = 'http://192.168.1.220:8088/janus'
+axios.post('http://192.168.1.220:5000/cam', {
 ```
 
 2. 関連するプロセスの立ち上げ
@@ -83,7 +84,17 @@ ffmpeg -f v4l2 -thread_queue_size 8192 -input_format yuyv422 -video_size 1280x72
 
 ```
 cd ./team2-frontend
+yarn install
 yarn serve
+```
+
+* GPIO用Flaskサーバの立ち上げ
+
+(CORSのえらーが出る場合は以降のflask-corsをインストール)
+
+```
+cd <このプロジェクトのディレクトリ>
+python3 app.py
 ```
 
 * アクセス  
@@ -99,6 +110,12 @@ sudo -E npm install -g n
 sudo -E n stable
 exec $SHELL -l
 npm install yarn
+```
+
+## cors対策（Raspberry Pi内であれば必要ない）
+
+```
+pip3 install -U flask-cors
 ```
 
 

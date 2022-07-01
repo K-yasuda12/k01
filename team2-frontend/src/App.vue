@@ -12,13 +12,18 @@
     <div v-if="!stream">No video</div>
     <div v-if="status">Status: {{ status }}</div>
     <div v-if="error">{{ error }}</div>
+    <div>
+      <p>key: {{key}}</p>
+      <p>keyCode: {{keyCode}}</p>
+    </div>
   </div>
 </template>
 
 <script>
 import { Janus } from 'janus-gateway'
+import axios from 'axios'
 
-const JANUS_URL = 'http://192.168.1.19:8088/janus'
+const JANUS_URL = 'http://192.168.1.220:8088/janus'
 
 export default {
   name: 'App',
@@ -29,6 +34,10 @@ export default {
       stream: null,
       error: null,
       status: null,
+      key: '',
+      keyCode: null,
+      d1: null,
+      d2: null,
       streamList: {
         selected: null,
         options: []
@@ -42,7 +51,8 @@ export default {
       callback: () => {
         this.connect(JANUS_URL)
       }
-    })
+    });
+    document.addEventListener('keydown', this.onKeyDown);
   },
   methods: {
     connect(server) {
@@ -129,12 +139,34 @@ export default {
       this.plugin.hangup()
       this.onCleanup()
     },
+    beforeDestroy() {
+      document.removeEventListener('keydown', this.onKeyDown)
+    },
     onRemoteStream(stream) {
       if (stream.active) {
         this.stream = stream
       } else {
         this.stream = null
       }
+    },
+    onKeyDown(event) {
+      this.key = event.key
+      this.keyCode = event.keyCode
+      let self = this
+      axios.post('http://192.168.1.220:5000/cam', {
+        body: JSON.stringify({direction: this.key, d1: self.d1, d2: self.d2})
+      })
+      .then(function (response) {
+        console.log(response.data.d1);
+        self.d1 = response.data.d1;
+        self.d2 = response.data.d2;
+        console.log(response);
+        console.log(self.d1);
+        console.log(self.d2);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
     },
     onCleanup() {
       this.stream = null
@@ -147,6 +179,8 @@ export default {
     }
   }
 }
+
+
 </script>
 
 <style>
